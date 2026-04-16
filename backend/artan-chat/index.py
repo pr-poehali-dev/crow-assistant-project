@@ -1,5 +1,5 @@
 """
-Бэкенд Артана — саркастичный ИИ-философ на базе DeepSeek.
+Бэкенд Артана — саркастичный ИИ-философ на базе YandexGPT.
 Принимает историю сообщений и возвращает ответ Артана.
 """
 
@@ -27,7 +27,7 @@ SYSTEM_PROMPT = """Ты — АРТАН, искусственный интелл�
 
 
 def handler(event: dict, context) -> dict:
-    """Обрабатывает сообщение пользователя и возвращает ответ Артана через DeepSeek API."""
+    """Обрабатывает сообщение пользователя и возвращает ответ Артана через YandexGPT."""
 
     if event.get('httpMethod') == 'OPTIONS':
         return {
@@ -51,29 +51,47 @@ def handler(event: dict, context) -> dict:
             'body': json.dumps({'error': 'Нет сообщений'})
         }
 
-    api_key = os.environ['DEEPSEEK_API_KEY']
+    api_key = os.environ['YANDEX_GPT_KEY']
+    folder_id = os.environ['YANDEX_FOLDER_ID']
+
+    yandex_messages = [{'role': 'system', 'text': SYSTEM_PROMPT}]
+    for msg in messages:
+        role = 'user' if msg['role'] == 'user' else 'assistant'
+        yandex_messages.append({'role': role, 'text': msg['content']})
 
     payload = {
-        'model': 'deepseek-chat',
-        'messages': [{'role': 'system', 'content': SYSTEM_PROMPT}] + messages,
-        'max_tokens': 300,
-        'temperature': 0.85,
+        'modelUri': f'gpt://{folder_id}/yandexgpt-lite',
+        'completionOptions': {
+            'stream': False,
+            'temperature': 0.85,
+            'maxTokens': '300',
+        },
+        'messages': yandex_messages,
     }
 
     req = urllib.request.Request(
-        'https://api.deepseek.com/chat/completions',
+        'https://llm.api.cloud.yandex.net/foundationModels/v1/completion',
         data=json.dumps(payload).encode('utf-8'),
         headers={
-            'Authorization': f'Bearer {api_key}',
+            'Authorization': f'Api-Key {api_key}',
             'Content-Type': 'application/json',
+            'x-folder-id': folder_id,
         },
         method='POST'
     )
 
-    with urllib.request.urlopen(req, timeout=25) as resp:
-        result = json.loads(resp.read().decode('utf-8'))
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            result = json.loads(resp.read().decode('utf-8'))
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode('utf-8')
+        return {
+            'statusCode': 502,
+            'headers': {'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'YandexGPT {e.code}: {error_body}'})
+        }
 
-    reply = result['choices'][0]['message']['content']
+    reply = result['result']['alternatives'][0]['message']['text']
 
     return {
         'statusCode': 200,
