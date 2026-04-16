@@ -73,7 +73,7 @@ def handler(event: dict, context) -> dict:
         'https://llm.api.cloud.yandex.net/foundationModels/v1/completion',
         data=json.dumps(payload).encode('utf-8'),
         headers={
-            'Authorization': f'Api-Key {api_key}',
+            'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json',
             'x-folder-id': folder_id,
         },
