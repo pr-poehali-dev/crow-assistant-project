@@ -7,6 +7,7 @@ export default {
 		"./components/**/*.{ts,tsx}",
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
+			"./1776342040330753462.html"
 	],
 	prefix: "",
 	theme: {
@@ -67,6 +68,11 @@ export default {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			fontFamily: {
+				orbitron: ['Orbitron', 'monospace'],
+				mono: ['IBM Plex Mono', 'monospace'],
+				sans: ['IBM Plex Sans', 'sans-serif'],
 			},
 			keyframes: {
 				'accordion-down': {
